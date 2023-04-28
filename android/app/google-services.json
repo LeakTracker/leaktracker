@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "310274908479",
+    "project_id": "water-loss",
+    "storage_bucket": "water-loss.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310274908479:android:5842d50676f7967b82b38a",
+        "android_client_info": {
+          "package_name": "com.example.water_loss_project"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "310274908479-g5j0v6nl53chiu2kce3vf8vkbjbsre93.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJC8y6C4u3Wyt88uRsajw5DkB-uRzk78w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "310274908479-g5j0v6nl53chiu2kce3vf8vkbjbsre93.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
