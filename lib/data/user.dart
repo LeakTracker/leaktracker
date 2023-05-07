@@ -7,7 +7,6 @@ class User {
   final String name;
   final String contactNumber;
   final String occupation;
-  final String department;
   final String userType;
 
   // Constructor
@@ -17,7 +16,6 @@ class User {
     required this.name,
     required this.contactNumber,
     required this.occupation,
-    required this.department,
     required this.userType,
   });
 
@@ -29,7 +27,6 @@ class User {
         name: doc[USER_NAME],
         contactNumber: doc[USER_CONTACT_NUMBER],
         occupation: doc[USER_OCCUPATION],
-        department: doc[USER_DEPARTMENT],
         userType: doc[USER_TYPE]);
   }
 }

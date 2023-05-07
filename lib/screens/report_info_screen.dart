@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 import 'package:water_loss_project/constant/constant.dart';
 import 'package:water_loss_project/data/department.dart';
 import 'package:water_loss_project/data/report.dart';
@@ -16,6 +20,51 @@ class ReportInfoScreen extends StatefulWidget {
 }
 
 class _ReportInfoScreenState extends State<ReportInfoScreen> {
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
+  List<Department> departmentList = [];
+  CameraPosition _kGooglePlex = CameraPosition(
+    target: LatLng(0, 0),
+    zoom: 14.4746,
+  );
+  Set<Marker> markers = Set();
+
+  setReportLocation() async {
+    setState(() {
+      _kGooglePlex = CameraPosition(
+        target: LatLng(widget.report.lat, widget.report.lng),
+        zoom: 14.4746,
+      );
+    });
+
+    BitmapDescriptor markerbitmap = await BitmapDescriptor.fromAssetImage(
+      const ImageConfiguration(),
+      "assets/images/car-repair-2.png",
+    );
+
+    setState(() {
+      markers.add(Marker(
+        //add start location marker
+        markerId:
+            MarkerId(LatLng(widget.report.lat, widget.report.lng).toString()),
+        position:
+            LatLng(widget.report.lat, widget.report.lng), //position of marker
+        infoWindow: InfoWindow(
+          //popup info
+          title: 'Starting Point ',
+          snippet: 'Start Marker',
+        ),
+        icon: markerbitmap, //Icon for Marker
+      ));
+    });
+  }
+
+  @override
+  void initState() {
+    setReportLocation();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,18 +96,90 @@ class _ReportInfoScreenState extends State<ReportInfoScreen> {
         ],
       ),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 30.0),
+        physics: const BouncingScrollPhysics(),
         children: [
-          SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 300.0,
+          Container(
+            padding: const EdgeInsets.all(10.0),
+            width: MediaQuery.of(context).size.width,
+            height: 300.0,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.0),
               child: Hero(
                 tag: widget.report.imageLink,
                 child: Image.network(
                   widget.report.imageLink,
                   fit: BoxFit.cover,
                 ),
-              )),
-          const SizedBox(height: 20.0),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            height: 150.0,
+            width: MediaQuery.of(context).size.width,
+            decoration:
+                BoxDecoration(borderRadius: BorderRadius.circular(20.0)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.0),
+              child: GoogleMap(
+                mapType: MapType.normal,
+                markers: markers,
+                initialCameraPosition: _kGooglePlex,
+                onMapCreated: (GoogleMapController controller) {
+                  _controller.complete(controller);
+                },
+              ),
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+            child: Text(
+              widget.report.address,
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              MapsLauncher.launchCoordinates(
+                  widget.report.lat, widget.report.lng);
+            },
+            child: Container(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              decoration: BoxDecoration(
+                color: COLOR_LIGHT_GREEN.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    "assets/images/google-maps.png",
+                    height: 20.0,
+                  ),
+                  SizedBox(width: 5.0),
+                  Text(
+                    "Open location in google maps",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: COLOR_GREEN,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10.0),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(

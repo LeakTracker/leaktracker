@@ -20,10 +20,12 @@ class ReportApi {
     required status,
     required waterLoss,
     required damageType,
-    required department,
     required reason,
     required dateAndTime,
     required file,
+    required lat,
+    required lng,
+    required address,
   }) async {
     // upload image
     String imageProfileUrl = "";
@@ -49,8 +51,10 @@ class ReportApi {
       REPORT_DAMAGE_TYPE: damageType,
       REPORT_IMAGE_LINK: imageProfileUrl,
       REPORT_REPAIRD: false,
-      REPORT_DEPARTMENT: department,
       REPORT_REASON: reason,
+      REPORT_LATITUDE: lat,
+      REPORT_LONGTITUDE: lng,
+      REPORT_ADDRESS: address,
     }).then((value) {
       debugPrint("Report Added");
       reports

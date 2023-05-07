@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:loading_indicator/loading_indicator.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 import 'package:top_snackbar_flutter/custom_snack_bar.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import 'package:water_loss_project/api/report_api.dart';
@@ -27,6 +30,8 @@ class ReportsInfoScreen extends StatefulWidget {
 }
 
 class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
   final ReportApi _reportApi = ReportApi();
   TextEditingController pipeSizeController = TextEditingController();
   TextEditingController damageTypeController = TextEditingController();
@@ -42,8 +47,14 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
   var dateTimeRepaired = DateTime.now();
   var dateTimeText = "";
   var waterLossDisplay = "";
+  double totalConsumers = 0;
   DateFormat dateFormat = DateFormat("yyyy-MM-dd h:mm a");
   List<Department> departmentList = [];
+  CameraPosition _kGooglePlex = CameraPosition(
+    target: LatLng(0, 0),
+    zoom: 14.4746,
+  );
+  Set<Marker> markers = Set();
 
   var damageType = [
     'Crack',
@@ -87,13 +98,13 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
     // ************* GET VELOCITY *************
     double velocity = 0;
     double gravity = 9.8; //fixed
-    double height = 0;
+    double height = 10; // FIXED - TANK HEIGHT DEFAULT IS 20 METERS
 
     debugPrint(report!.department);
 
-    Department data = departmentList
-        .firstWhere((element) => element.department == report!.department);
-    height = data.height;
+    // Department data = departmentList
+    //     .firstWhere((element) => element.department == report!.department);
+    // height = 20; // TANK HEIGHT DEFAULT IS 20 METERS
     debugPrint("height: $height");
 
     velocity = double.parse(sqrt((gravity * height) * 2).toStringAsFixed(2));
@@ -115,6 +126,10 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
     flowrate = (velocity * area) / 1000;
     debugPrint("flowrate: $flowrate");
 
+    // ************* GET WATER DISTRIBUTION *************
+
+    double distribution = flowrate / totalConsumers;
+    debugPrint("distribution: $distribution");
     // ************* Get time difference from the report date to repair date *************
     // final dateNow = DateTime.now();
     var currDate = DateTime.parse(report!.timeReported.toString());
@@ -125,7 +140,7 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
 
     // Get Water Loss
     double waterLoss = 0;
-    waterLoss = timeInterval * (flowrate / (100 / damagePercentage));
+    waterLoss = timeInterval * (distribution / (100 / damagePercentage));
     double roundedWaterLoss = double.parse(waterLoss.toStringAsFixed(2));
     debugPrint("waterloss: $roundedWaterLoss");
 
@@ -238,8 +253,54 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
     });
   }
 
+  setReportLocation() async {
+    setState(() {
+      _kGooglePlex = CameraPosition(
+        target: LatLng(widget.report.lat, widget.report.lng),
+        zoom: 14.4746,
+      );
+    });
+
+    BitmapDescriptor markerbitmap = await BitmapDescriptor.fromAssetImage(
+      const ImageConfiguration(),
+      "assets/images/car-repair-2.png",
+    );
+
+    markers.add(Marker(
+      //add start location marker
+      markerId:
+          MarkerId(LatLng(widget.report.lat, widget.report.lng).toString()),
+      position:
+          LatLng(widget.report.lat, widget.report.lng), //position of marker
+      infoWindow: InfoWindow(
+        //popup info
+        title: 'Starting Point ',
+        snippet: 'Start Marker',
+      ),
+      icon: markerbitmap, //Icon for Marker
+    ));
+  }
+
+  getTotalConsumers() async {
+    await FirebaseFirestore.instance
+        .collection(C_ACCOUNTS)
+        .where(USER_TYPE, isEqualTo: "user")
+        .get()
+        .then((QuerySnapshot<Map<String, dynamic>> snapshot) async {
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          totalConsumers = double.parse(snapshot.size.toString());
+        });
+      }
+    }).catchError((e) {
+      debugPrint('No User Found -> error: $e');
+    });
+  }
+
   @override
   void initState() {
+    getTotalConsumers();
+    setReportLocation();
     getDepartments();
     getReportData();
     super.initState();
@@ -279,17 +340,87 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
         padding: const EdgeInsets.only(bottom: 30.0),
         physics: const BouncingScrollPhysics(),
         children: [
-          SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 300.0,
+          Container(
+            padding: const EdgeInsets.all(10.0),
+            width: MediaQuery.of(context).size.width,
+            height: 300.0,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.0),
               child: Hero(
                 tag: widget.report.imageLink,
                 child: Image.network(
                   widget.report.imageLink,
                   fit: BoxFit.cover,
                 ),
-              )),
-          const SizedBox(height: 20.0),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10.0),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            height: 150.0,
+            width: MediaQuery.of(context).size.width,
+            decoration:
+                BoxDecoration(borderRadius: BorderRadius.circular(20.0)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.0),
+              child: GoogleMap(
+                mapType: MapType.normal,
+                markers: markers,
+                initialCameraPosition: _kGooglePlex,
+                onMapCreated: (GoogleMapController controller) {
+                  _controller.complete(controller);
+                },
+              ),
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+            child: Text(
+              widget.report.address,
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              MapsLauncher.launchCoordinates(
+                  widget.report.lat, widget.report.lng);
+            },
+            child: Container(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              decoration: BoxDecoration(
+                color: COLOR_LIGHT_GREEN.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    "assets/images/google-maps.png",
+                    height: 20.0,
+                  ),
+                  SizedBox(width: 5.0),
+                  Text(
+                    "Open location in google maps",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: COLOR_GREEN,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           !pageDoneLoading
               ? SizedBox(
                   height: MediaQuery.of(context).size.height,
@@ -435,13 +566,6 @@ class _ReportsInfoScreenState extends State<ReportsInfoScreen> {
                             ),
                             Text(
                               report!.email,
-                              style: const TextStyle(
-                                fontStyle: FontStyle.italic,
-                                color: Colors.black45,
-                              ),
-                            ),
-                            Text(
-                              report!.department,
                               style: const TextStyle(
                                 fontStyle: FontStyle.italic,
                                 color: Colors.black45,

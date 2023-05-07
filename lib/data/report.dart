@@ -25,6 +25,9 @@ class Report {
   final String department;
   final int timeInterval;
   final String reason;
+  final double lat;
+  final double lng;
+  final String address;
 
   // Constructor
   Report({
@@ -51,6 +54,9 @@ class Report {
     required this.department,
     required this.timeInterval,
     required this.reason,
+    required this.lat,
+    required this.lng,
+    required this.address,
   });
 
   /// factory user object
@@ -76,9 +82,12 @@ class Report {
       damageType: doc[REPORT_DAMAGE_TYPE] ?? "",
       repaired: doc[REPORT_REPAIRD] ?? false,
       imageLink: doc[REPORT_IMAGE_LINK],
-      department: doc[REPORT_DEPARTMENT],
+      department: doc[REPORT_DEPARTMENT] ?? "",
       timeInterval: doc[REPORT_TIME_INTERVAL] ?? 0,
       reason: doc[REPORT_REASON] ?? "",
+      lat: doc[REPORT_LATITUDE] ?? 0,
+      lng: doc[REPORT_LONGTITUDE] ?? 0,
+      address: doc[REPORT_ADDRESS] ?? "",
     );
   }
 }

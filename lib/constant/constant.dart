@@ -23,6 +23,8 @@ const USER_CONTACT_NUMBER = "contact_number";
 const USER_DEPARTMENT = "department";
 const USER_OCCUPATION = "occupation";
 const USER_TYPE = "user_type";
+const USER_CONSUMERS = "consumers";
+const USER_TANK_HEIGHT = "tank_height";
 const USER_CREATED_AT = "created_at";
 const USER_UPDATED_AT = "updated_at";
 
@@ -51,10 +53,15 @@ const REPORT_HOLE_LENGTH = "hole_length";
 const REPORT_HOLE_WIDTH = "hole_width";
 const REPORT_TIME_INTERVAL = "time_interval";
 const REPORT_REASON = "reason";
+const REPORT_LATITUDE = "address_lat";
+const REPORT_LONGTITUDE = "address_lng";
+const REPORT_ADDRESS = "address";
 
 // DEPARTMENT
 const DEPARTMENT = "department";
 const HEIGHT = "height";
+
+const MAPS_API_KEY = "AIzaSyBoDtACSuU8JAx52d9D4fF3FJIduk5rEcw";
 
 // List<Department> DEPARTMENT_LISTS = [
 //   Department(department: "CCJS", height: 1.02),
